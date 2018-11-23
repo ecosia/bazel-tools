@@ -2,7 +2,7 @@ load("@bazel_skylib//:lib.bzl", "shell")
 
 _CONTENT_PREFIX = """#!/usr/bin/env bash
 
-set -euo pipefail
+set -euxo pipefail
 
 """
 
@@ -37,7 +37,7 @@ def _multirun_impl(ctx):
         if default_runfiles != None:
             transitive_depsets.append(default_runfiles.files)
         full_command = "%s ./%s %s" % (envs, shell.quote(exe.short_path), attrs)
-        content.append("echo Running %s\n./%s\n" % (shell.quote(str(command.label)), full_command))
+        content.append("echo Running %s\n%s\n" % (shell.quote(str(command.label)), full_command))
 
     out_file = ctx.actions.declare_file(ctx.label.name + ".bash")
     ctx.actions.write(
