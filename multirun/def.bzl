@@ -14,15 +14,16 @@ def _multirun_impl(ctx):
 
     if not args_for_commands:
         args_for_commands = [""] * len(ctx.attr.commands)
+        print(args_for_commands)
 
     if not env_for_commands:
-        env_fors_commands = [""] * len(ctx.attr.commands)
+        env_for_commands = [""] * len(ctx.attr.commands)
 
     if len(ctx.attr.commands) != len(args_for_commands):
-        fail("The length of the commans and args_for_commands attribute have to match.")
+        fail("The length of the commands (len %s) and args_for_commands (len %s) attribute have to match." % (len(ctx.attr.commands), len(args_for_commands)))
 
     if len(ctx.attr.commands) != len(env_for_commands):
-        fail("The length of the commans and env_for_commands attribute have to match.")
+        fail("The length of the commands (len %s) and env_for_commands (len %s) attribute have to match." % (len(ctx.attr.commands), len(env_for_commands)))
 
     for command, attrs, envs  in zip(ctx.attr.commands, args_for_commands, env_for_commands):
         info = command[DefaultInfo]
@@ -35,8 +36,8 @@ def _multirun_impl(ctx):
         default_runfiles = info.default_runfiles
         if default_runfiles != None:
             transitive_depsets.append(default_runfiles.files)
-        command = "%s ./%s %s" % (envs, shell.quote(exe.short_path), attrs)
-        content.append("echo Running %s\n./%s\n" % (shell.quote(str(command.label)), command))
+        full_command = "%s ./%s %s" % (envs, shell.quote(exe.short_path), attrs)
+        content.append("echo Running %s\n./%s\n" % (shell.quote(str(command.label)), full_command))
 
     out_file = ctx.actions.declare_file(ctx.label.name + ".bash")
     ctx.actions.write(
