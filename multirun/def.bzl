@@ -9,8 +9,22 @@ set -euo pipefail
 def _multirun_impl(ctx):
     transitive_depsets = []
     content = [_CONTENT_PREFIX]
+    args_for_commands = ctx.attr.args_for_commands
+    env_for_commands = ctx.attr.env_for_commands
 
-    for command in ctx.attr.commands:
+    if not args_for_commands:
+        args_for_commands = [""] * len(ctx.attr.commands)
+
+    if not env_for_commands:
+        env_fors_commands = [""] * len(ctx.attr.commands)
+
+    if len(ctx.attr.commands) != len(args_for_commands):
+        fail("The length of the commans and args_for_commands attribute have to match.")
+
+    if len(ctx.attr.commands) != len(env_for_commands):
+        fail("The length of the commans and env_for_commands attribute have to match.")
+
+    for command, attrs, envs  in zip(ctx.attr.commands, args_for_commands, env_for_commands):
         info = command[DefaultInfo]
         if info.files_to_run == None:
             fail("%s is not executable" % command.label, attr = "commands")
@@ -21,7 +35,8 @@ def _multirun_impl(ctx):
         default_runfiles = info.default_runfiles
         if default_runfiles != None:
             transitive_depsets.append(default_runfiles.files)
-        content.append("echo Running %s\n./%s\n" % (shell.quote(str(command.label)), shell.quote(exe.short_path)))
+        command = "%s ./%s %s" % (envs, shell.quote(exe.short_path), attrs)
+        content.append("echo Running %s\n./%s\n" % (shell.quote(str(command.label)), command))
 
     out_file = ctx.actions.declare_file(ctx.label.name + ".bash")
     ctx.actions.write(
@@ -47,6 +62,16 @@ _multirun = rule(
             allow_files = True,
             doc = "Targets to run in specified order",
             cfg = "host",
+        ),
+        "args_for_commands": attr.string_list(
+            default = [],
+            doc = """This list has to match the commands list. Each entry is a string with all
+                     arguments to be passed to the matching command, e.g. '--a=b --c=d'""",
+        ),
+        "env_for_commands": attr.string_list(
+            default = [],
+            doc = """This list has to match the commands list. Each entry is a string with all
+                     env variables to be passed to the matching command, e.g. 'ENV1=a ENV2=b'""",
         ),
     },
     executable = True,
