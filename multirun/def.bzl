@@ -62,7 +62,6 @@ _multirun = rule(
             mandatory = True,
             allow_files = True,
             doc = "Targets to run in specified order",
-            cfg = "host",
         ),
         "args_for_commands": attr.string_list(
             default = [],
